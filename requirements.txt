@@ -1,0 +1,35 @@
+# ============================================================
+# CKD Progression Prediction Project — Dependencies
+# ============================================================
+# Install: pip install -r requirements.txt
+
+# ── Core Data Science ────────────────────────────────────────
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+scipy>=1.10.0
+
+# ── Visualisation ────────────────────────────────────────────
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# ── Deep Learning (for full Keras LSTM version) ──────────────
+# tensorflow>=2.13.0    # Uncomment when GPU/TF available
+# torch>=2.0.0          # Alternative: PyTorch version
+
+# ── Explainability ───────────────────────────────────────────
+shap>=0.42.0           # Optional: falls back to Gini importance
+
+# ── Backend API ──────────────────────────────────────────────
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+
+# ── Frontend (React — managed via npm, not pip) ──────────────
+# react@18.x
+# recharts@2.x
+# tailwindcss@3.x
+# vite@5.x (build tool)
+
+flask>=3.1.3           # Optional: for Flask backend alternative

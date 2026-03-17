@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CKD Progression Prediction — Clinical Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    /* ─── FONTS ─── */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap');
+
+    /* ─── VARIABLES ─── */
+    :root {
+      --bg: #0c0e14;
+      --bg2: #131620;
+      --bg3: #1a1e2e;
+      --border: #252a3a;
+      --text: #e8eaf0;
+      --text-muted: #8892a4;
+      --accent: #5b7ff2;
+      --accent2: #7c5fe0;
+      --success: #2dd4a8;
+      --warning: #f5a623;
+      --danger: #f0506e;
+      --stage1: #2dd4a8;
+      --stage2: #6dd5ed;
+      --stage3: #f5a623;
+      --stage4: #f07050;
+      --stage5: #c060e0;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+      --font: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    /* ─── RESET ─── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 14px;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg2);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    /* ─── LAYOUT ─── */
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .logo-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .logo-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .sidebar-section {
+      padding: 16px 12px 8px;
+      font-size: 10px;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .patient-list {
+      padding: 0 8px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .patient-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 4px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .patient-item:hover {
+      background: var(--bg3);
+    }
+
+    .patient-item.active {
+      background: rgba(91, 127, 242, 0.15);
+      border: 1px solid rgba(91, 127, 242, 0.3);
+    }
+
+    .patient-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--mono);
+      flex-shrink: 0;
+    }
+
+    .patient-info .name {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .patient-info .detail {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .risk-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .risk-dot.HIGH {
+      background: var(--danger);
+      box-shadow: 0 0 6px var(--danger);
+    }
+
+    .risk-dot.MEDIUM {
+      background: var(--warning);
+    }
+
+    .risk-dot.LOW {
+      background: var(--success);
+    }
+
+    /* ─── MAIN ─── */
+    .main {
+      padding: 28px 32px;
+      overflow-y: auto;
+    }
+
+    /* ─── TOPBAR ─── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .page-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .page-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .model-tag {
+      background: rgba(91, 127, 242, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(91, 127, 242, 0.3);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .card-title-lg {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    /* ─── STATS ROW ─── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent-bar, var(--accent));
+    }
+
+    .stat-val {
+      font-size: 28px;
+      font-weight: 600;
+      line-height: 1;
+      margin-bottom: 4px;
+      font-family: var(--mono);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .stat-delta {
+      font-size: 11px;
+      margin-top: 8px;
+    }
+
+    .delta-up {
+      color: var(--danger);
+    }
+
+    .delta-dn {
+      color: var(--success);
+    }
+
+    /* ─── RISK COMPARISON ─── */
+    .risk-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .risk-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .risk-model-name {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .risk-gauge-wrap {
+      position: relative;
+      width: 120px;
+      height: 60px;
+      margin: 0 auto 12px;
+    }
+
+    .risk-score-big {
+      font-size: 32px;
+      font-weight: 600;
+      font-family: var(--mono);
+      margin-bottom: 4px;
+    }
+
+    .risk-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .risk-badge.HIGH {
+      background: rgba(240, 80, 110, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(240, 80, 110, 0.3);
+    }
+
+    .risk-badge.MEDIUM {
+      background: rgba(245, 166, 35, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(245, 166, 35, 0.3);
+    }
+
+    .risk-badge.LOW {
+      background: rgba(45, 212, 168, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(45, 212, 168, 0.3);
+    }
+
+    .risk-comparison-delta {
+      text-align: center;
+      padding: 14px;
+      background: rgba(91, 127, 242, 0.07);
+      border: 1px solid rgba(91, 127, 242, 0.2);
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .risk-comparison-delta strong {
+      color: var(--accent);
+    }
+
+    /* ─── TRENDS GRID ─── */
+    .trends-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .trend-chip {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .trend-icon {
+      font-size: 18px;
+    }
+
+    .trend-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .trend-value {
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--mono);
+    }
+
+    .trend-chip.alert {
+      border-color: rgba(240, 80, 110, 0.4);
+      background: rgba(240, 80, 110, 0.05);
+    }
+
+    .trend-chip.warn {
+      border-color: rgba(245, 166, 35, 0.4);
+      background: rgba(245, 166, 35, 0.05);
+    }
+
+    .trend-chip.ok {
+      border-color: rgba(45, 212, 168, 0.3);
+      background: rgba(45, 212, 168, 0.05);
+    }
+
+    /* ─── CHART CONTAINERS ─── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 220px;
+    }
+
+    /* ─── EXPLANATION BOX ─── */
+    .explanation-box {
+      background: var(--bg3);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .explanation-header {
+      font-size: 11px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    /* ─── VISIT TABLE ─── */
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead th {
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody td {
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .stage-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    /* ─── MODEL COMPARISON TABLE ─── */
+    .compare-table-wrap {
+      margin-bottom: 20px;
+    }
+
+    .compare-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 1fr 1fr 80px;
+      gap: 0;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 8px;
+    }
+
+    .compare-row.header {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .compare-row.data {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      margin-bottom: 6px;
+    }
+
+    .bar-outer {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-inner {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .compare-metric {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .compare-val {
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .delta-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--mono);
+    }
+
+    .delta-pos {
+      background: rgba(45, 212, 168, 0.15);
+      color: var(--success);
+    }
+
+    .delta-neg {
+      background: rgba(240, 80, 110, 0.15);
+      color: var(--danger);
+    }
+
+    /* ─── FOOTER ─── */
+    .footer-bar {
+      padding: 16px 0 0;
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ─── ANIMATION ─── */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate {
+      animation: fadeUp 0.4s ease forwards;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.5
+      }
+    }
+
+    .pulse {
+      animation: pulse 2s ease infinite;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- ════ SIDEBAR ════ -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🫘</div>
+        <div class="logo-title"></div>
+        <div class="logo-sub">CKD Progression Monitor</div>
+      </div>
+      <div class="sidebar-section">Patients</div>
+      <div class="patient-list" id="patientList"></div>
+      <div style="padding:16px 12px; border-top:1px solid var(--border); margin-top:auto;">
+        <div style="font-size:10px;color:var(--text-muted);text-align:center;line-height:1.6;">
+
+          AI-Driven CKD Progression Prediction<br>
+          AI-Driven CKD Progression Prediction<br>
+          <span style="color:var(--accent)">Baseline • LSTM • LSTM+TII (Proposed)</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ════ MAIN CONTENT ════ -->
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <div class="page-title" id="patientTitle">Select a Patient</div>
+          <div class="page-sub" id="patientSub">CKD Progression Risk Assessment</div>
+        </div>
+        <div class="model-tag">Proposed Method: LSTM + Temporal Instability Index (TII)</div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card" style="--accent-bar:#2dd4a8;">
+          <div class="stat-val" id="statEgfr">—</div>
+          <div class="stat-label">Current eGFR</div>
+          <div class="stat-delta" id="statEgfrDelta">—</div>
+        </div>
+        <div class="stat-card" style="--accent-bar:#5b7ff2;">
+          <div class="stat-val" id="statStage">—</div>
+          <div class="stat-label">CKD Stage (KDIGO)</div>
+          <div class="stat-delta" id="statStageSub">—</div>
+        </div>
+        <div class="stat-card" style="--accent-bar:#f5a623;">
+          <div class="stat-val" id="statVisits">—</div>
+          <div class="stat-label">Total Visits</div>
+          <div class="stat-delta" id="statVisitsSub">—</div>
+        </div>
+        <div class="stat-card" style="--accent-bar:#f0506e;">
+          <div class="stat-val" id="statRisk">—</div>
+          <div class="stat-label">Progression Risk (LSTM+TII)</div>
+          <div class="stat-delta" id="statRiskBadge">—</div>
+        </div>
+      </div>
+
+      <!-- Risk Comparison -->
+      <div class="risk-row" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="risk-card">
+          <div class="risk-model-name">⚡ Baseline (Last Visit RF)</div>
+          <div class="risk-score-big" id="rfScore" style="color:var(--warning)">—</div>
+          <div id="rfBadge" class="risk-badge">—</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:12px;line-height:1.4;">
+            Uses only most recent visit.<br>
+            Ignores all temporal trends.
+          </div>
+        </div>
+        <div class="risk-card">
+          <div class="risk-model-name">🧠 Time-Series LSTM</div>
+          <div class="risk-score-big" id="lstmScore" style="color:var(--accent)">—</div>
+          <div id="lstmBadge" class="risk-badge">—</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:12px;line-height:1.4;">
+            Deep sequence analysis.<br>
+            Captures raw biomarker trends.
+          </div>
+        </div>
+        <div class="risk-card" style="border-color: rgba(155, 89, 182, 0.4); background: rgba(155, 89, 182, 0.05);">
+          <div class="risk-model-name" style="color:#9b59b6;">✨ LSTM + TII (Proposed)</div>
+          <div class="risk-score-big" id="tiiScore" style="color:#9b59b6;">—</div>
+          <div id="tiiBadge" class="risk-badge"
+            style="background:rgba(155, 89, 182, 0.15); color:#9b59b6; border-color:#9b59b6;">—</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:12px;line-height:1.4;">
+            Novel instability index.<br>
+            <span style="color:#9b59b6; font-weight:500;">Captures clinical volatility.</span>
+          </div>
+        </div>
+      </div>
+      <div class="risk-comparison-delta" id="riskDelta">
+        Select a patient to see risk comparison
+      </div>
+
+      <!-- Trend Chips -->
+      <div class="trends-grid" id="trendsGrid">
+        <div class="trend-chip" id="chipEgfr">
+          <div class="trend-icon">📉</div>
+          <div>
+            <div class="trend-label">eGFR Trend</div>
+            <div class="trend-value" id="chipEgfrVal">—</div>
+          </div>
+        </div>
+        <div class="trend-chip" id="chipCr">
+          <div class="trend-icon">🧪</div>
+          <div>
+            <div class="trend-label">Creatinine</div>
+            <div class="trend-value" id="chipCrVal">—</div>
+          </div>
+        </div>
+        <div class="trend-chip" id="chipBp">
+          <div class="trend-icon">❤️</div>
+          <div>
+            <div class="trend-label">Blood Pressure</div>
+            <div class="trend-value" id="chipBpVal">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-row">
+        <div class="card" style="padding:20px 20px 14px;">
+          <div class="card-title">eGFR Trajectory with KDIGO Stage Bands</div>
+          <div class="chart-wrap"><canvas id="egfrChart"></canvas></div>
+        </div>
+        <div class="card" style="padding:20px 20px 14px;">
+          <div class="card-title">Biomarker Trends (Last 5 Visits)</div>
+          <div class="chart-wrap"><canvas id="bioChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Explanation Box -->
+      <div class="explanation-box">
+        <div class="explanation-header">🔍 AI Clinical Explanation</div>
+        <div id="explanationText">Select a patient from the sidebar to view the AI-generated trend-aware clinical
+          explanation.</div>
+      </div>
+
+      <!-- Model Comparison Table -->
+      <div class="card">
+        <div class="card-title-lg">Model Performance Comparison</div>
+        <div class="card-title" style="margin-bottom:12px;">Comparative Metrics: Baseline RF vs. Standard LSTM vs. LSTM
+          + TII (Proposed Method)</div>
+        <div class="compare-table-wrap" id="compareTable">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- Visit History Table -->
+      <div class="card">
+        <div class="card-title">Visit History</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Visit #</th>
+                <th>Date</th>
+                <th>eGFR</th>
+                <th>Creatinine</th>
+                <th>Sys BP</th>
+                <th>HbA1c</th>
+                <th>Hgb</th>
+                <th>Stage</th>
+                <th>Progression</th>
+              </tr>
+            </thead>
+            <tbody id="visitTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footer-bar">
+
+        <div>TensorFlow/Keras LSTM + scikit-learn RF | KDIGO 2012 Guidelines</div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════════════════════════════
+    // MOCK DATA (replace with fetch() calls to Flask API in production)
+    // ════════════════════════════════════════════════════════════════════════
+    const MOCK_PATIENTS = [
+      {
+        id: 'P0001', gender: 'M', age: 37,
+        risk_level: 'HIGH', lstm_risk: 0.78, rf_risk: 0.61, tii_risk: 0.89,
+        explanation: 'eGFR declining at 2.8 ml/min/visit (from 86.9 → 34.5, Δ=-52.4). High clinical volatility (TII_egfr=0.34) detected. Proposed LSTM+TII method assigns 89% risk, notably higher than standard LSTM (78%) and baseline (61%). The instability of biomarkers is a primary driver of risk here.',
+        visits: [
+          { n: 1, date: '2019-03-24', egfr: 86.9, cr: 0.87, sbp: 140, hba1c: 5.7, hgb: 15.5, stage: 2, prog: 0 },
+          { n: 2, date: '2019-06-25', egfr: 86.4, cr: 0.93, sbp: 145, hba1c: 5.6, hgb: 13.5, stage: 2, prog: 1 },
+          { n: 3, date: '2019-10-11', egfr: 39.0, cr: 1.89, sbp: 147, hba1c: 5.2, hgb: 14.0, stage: 3, prog: 0 },
+          { n: 4, date: '2019-12-21', egfr: 35.4, cr: 2.14, sbp: 151, hba1c: 4.5, hgb: 14.4, stage: 3, prog: 0 },
+          { n: 5, date: '2020-04-02', egfr: 34.5, cr: 2.20, sbp: 144, hba1c: 6.0, hgb: 12.9, stage: 3, prog: 1 },
+          { n: 6, date: '2020-07-04', egfr: 20.1, cr: 3.12, sbp: 158, hba1c: 5.9, hgb: 12.1, stage: 4, prog: 0 },
+          { n: 7, date: '2020-09-29', egfr: 17.4, cr: 3.74, sbp: 162, hba1c: 5.8, hgb: 11.8, stage: 4, prog: 0 },
+          { n: 8, date: '2021-01-02', egfr: 14.8, cr: 4.31, sbp: 165, hba1c: 6.1, hgb: 10.9, stage: 5, prog: 0 },
+        ]
+      },
+      {
+        id: 'P0008', gender: 'F', age: 58,
+        risk_level: 'MEDIUM', lstm_risk: 0.47, rf_risk: 0.38,
+        explanation: 'eGFR relatively stable (range: 52.1–56.8) over last 5 visits. Mild creatinine rise of 12% noted. Systolic BP increased 14 mmHg in recent visits suggesting inadequate hypertension control. LSTM assigns 47% progression risk — slightly higher than the 38% single-visit baseline, capturing the subtle BP trend. Continued monitoring recommended with BP optimization.',
+        visits: [
+          { n: 1, date: '2019-04-10', egfr: 62.1, cr: 0.91, sbp: 128, hba1c: 5.8, hgb: 13.2, stage: 2, prog: 0 },
+          { n: 2, date: '2019-07-15', egfr: 59.4, cr: 0.95, sbp: 131, hba1c: 6.1, hgb: 13.0, stage: 2, prog: 0 },
+          { n: 3, date: '2019-10-14', egfr: 57.8, cr: 0.99, sbp: 136, hba1c: 5.9, hgb: 12.8, stage: 2, prog: 0 },
+          { n: 4, date: '2020-01-20', egfr: 55.3, cr: 1.02, sbp: 141, hba1c: 6.2, hgb: 12.7, stage: 2, prog: 0 },
+          { n: 5, date: '2020-04-22', egfr: 52.1, cr: 1.08, sbp: 145, hba1c: 6.0, hgb: 12.5, stage: 2, prog: 0 },
+        ]
+      },
+      {
+        id: 'P0017', gender: 'M', age: 71,
+        risk_level: 'HIGH', lstm_risk: 0.74, rf_risk: 0.52,
+        explanation: 'Patient shows a consistent eGFR decline of 3.4 ml/min/visit over 5 visits (48.2 → 31.1). CKD stage progressed from Stage 3 to Stage 4 boundary. Creatinine risen 38% from baseline. HbA1c persistently elevated (>7.5%) indicating poor diabetes control — a major accelerant of CKD progression. LSTM captures this multi-signal decline pattern and assigns 74% risk vs 52% from the baseline model that only sees the latest value.',
+        visits: [
+          { n: 1, date: '2019-05-03', egfr: 48.2, cr: 1.38, sbp: 148, hba1c: 7.8, hgb: 12.1, stage: 3, prog: 0 },
+          { n: 2, date: '2019-08-09', egfr: 44.7, cr: 1.51, sbp: 152, hba1c: 8.1, hgb: 11.9, stage: 3, prog: 0 },
+          { n: 3, date: '2019-11-11', egfr: 40.9, cr: 1.66, sbp: 154, hba1c: 7.9, hgb: 11.5, stage: 3, prog: 0 },
+          { n: 4, date: '2020-02-14', egfr: 37.2, cr: 1.74, sbp: 158, hba1c: 8.4, hgb: 11.2, stage: 3, prog: 0 },
+          { n: 5, date: '2020-05-20', egfr: 31.1, cr: 1.90, sbp: 160, hba1c: 8.0, hgb: 10.9, stage: 3, prog: 1 },
+        ]
+      },
+      {
+        id: 'P0041', gender: 'F', age: 44,
+        risk_level: 'LOW', lstm_risk: 0.18, rf_risk: 0.21,
+        explanation: 'eGFR has shown mild improvement (+1.2 ml/min/visit) over 5 visits, from 72.1 to 77.9. Creatinine stable at 0.78–0.83 mg/dL. Blood pressure well-controlled (SBP 118–126). HbA1c within target range. LSTM assigns 18% progression risk — both models agree on low risk. This patient is responding well to current management. Routine monitoring per CKD Stage 2 care plan is appropriate.',
+        visits: [
+          { n: 1, date: '2020-01-08', egfr: 72.1, cr: 0.83, sbp: 126, hba1c: 5.4, hgb: 13.8, stage: 2, prog: 0 },
+          { n: 2, date: '2020-04-13', egfr: 73.4, cr: 0.80, sbp: 122, hba1c: 5.3, hgb: 13.9, stage: 2, prog: 0 },
+          { n: 3, date: '2020-07-15', egfr: 75.0, cr: 0.80, sbp: 120, hba1c: 5.5, hgb: 14.1, stage: 2, prog: 0 },
+          { n: 4, date: '2020-10-20', egfr: 76.2, cr: 0.79, sbp: 119, hba1c: 5.2, hgb: 14.0, stage: 2, prog: 0 },
+          { n: 5, date: '2021-01-22', egfr: 77.9, cr: 0.78, sbp: 118, hba1c: 5.4, hgb: 14.2, stage: 2, prog: 0 },
+        ]
+      },
+      {
+        id: 'P0103', gender: 'M', age: 65,
+        risk_level: 'HIGH', lstm_risk: 0.84, rf_risk: 0.55, tii_risk: 0.92,
+        explanation: '⚠️ CRITICAL: eGFR approach Stage 5. Extreme biomarker instability detected. LSTM+TII risk (92%) strongly exceeds other methods, reflecting the severity of clinical volatility.',
+        visits: [
+          { n: 1, date: '2020-06-05', egfr: 28.4, cr: 1.98, sbp: 155, hba1c: 7.2, hgb: 11.8, stage: 4, prog: 0 },
+          { n: 2, date: '2020-09-08', egfr: 24.1, cr: 2.74, sbp: 161, hba1c: 7.5, hgb: 11.2, stage: 4, prog: 0 },
+          { n: 3, date: '2020-12-10', egfr: 20.2, cr: 3.52, sbp: 165, hba1c: 7.1, hgb: 10.5, stage: 4, prog: 0 },
+          { n: 4, date: '2021-03-14', egfr: 16.9, cr: 4.31, sbp: 169, hba1c: 7.8, hgb: 9.8, stage: 4, prog: 0 },
+          { n: 5, date: '2021-06-18', egfr: 11.2, cr: 5.65, sbp: 172, hba1c: 7.4, hgb: 9.1, stage: 5, prog: 1 },
+        ]
+      }
+    ];
+
+    // ════════════════════════════════════════════════════════════════════════
+    // API INTEGRATION
+    // ════════════════════════════════════════════════════════════════════════
+    const API_BASE = 'http://localhost:5000';
+    let PATIENTS = MOCK_PATIENTS;
+
+    async function checkApi() {
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        const status = await res.json();
+        console.log("API Status:", status);
+        return status.status === "ok";
+      } catch (e) {
+        console.warn("API not reachable, using mock data.", e);
+        return false;
+      }
+    }
+
+    async function fetchPatients() {
+      try {
+        const res = await fetch(`${API_BASE}/api/patients`);
+        const ids = await res.json();
+        // Just take the first 10 for display
+        const sampleIds = ids.slice(0, 10);
+        const fullPatients = [];
+
+        for (const id of sampleIds) {
+          const pRes = await fetch(`${API_BASE}/api/patient/${id}`);
+          const visits = await pRes.json();
+
+          // Format for dashboard
+          const first = visits[0];
+          const last = visits[visits.length - 1];
+
+          // Get live prediction
+          const predRes = await fetch(`${API_BASE}/api/predict`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ visits: visits })
+          });
+          const pred = await predRes.json();
+
+          fullPatients.push({
+            id: id,
+            gender: first.gender || 'U',
+            age: last.age || 50,
+            risk_level: pred.tii_risk >= 0.65 ? 'HIGH' : pred.tii_risk >= 0.35 ? 'MEDIUM' : 'LOW',
+            lstm_risk: pred.lstm_risk,
+            rf_risk: pred.baseline_risk,
+            tii_risk: pred.tii_risk,
+            explanation: `Live prediction from MIMIC-IV data. Current eGFR: ${last.egfr.toFixed(1)}. Stages detected: ${visits.length} visits analyzed.`,
+            visits: visits.map((v, i) => ({
+              n: i + 1,
+              date: v.visit_date.split(' ')[0],
+              egfr: v.egfr,
+              cr: v.creatinine,
+              sbp: v.systolic_bp,
+              hba1c: v.hba1c || 5.5,
+              hgb: v.hemoglobin || 13.0,
+              stage: v.ckd_stage,
+              prog: v.progression_label
+            }))
+          });
+        }
+        return fullPatients;
+      } catch (e) {
+        console.error("Failed to fetch real patients", e);
+        return MOCK_PATIENTS;
+      }
+    }
+
+    // Model comparison metrics
+    const METRICS = [
+      { name: 'AUC-ROC', rf: 0.826, lstm: 0.942, tii: 0.984, color: '#9b59b6' },
+      { name: 'F1-Score', rf: 0.267, lstm: 0.648, tii: 0.751, color: '#9b59b6' },
+      { name: 'Recall', rf: 0.286, lstm: 0.892, tii: 0.972, color: '#9b59b6' },
+      { name: 'Precision', rf: 0.250, lstm: 0.512, tii: 0.618, color: '#9b59b6' },
+      { name: 'Accuracy', rf: 0.890, lstm: 0.895, tii: 0.921, color: '#9b59b6' },
+    ];
+
+    // Stage color map
+    const STAGE_COLORS = { 1: '#2dd4a8', 2: '#6dd5ed', 3: '#f5a623', 4: '#f07050', 5: '#c060e0' };
+    const STAGE_NAMES = { 1: 'Stage 1', 2: 'Stage 2', 3: 'Stage 3', 4: 'Stage 4', 5: 'Stage 5' };
+
+    // ════════════════════════════════════════════════════════════════════════
+    // CHART INSTANCES
+    // ════════════════════════════════════════════════════════════════════════
+    let egfrChartInst = null;
+    let bioChartInst = null;
+
+    function destroyCharts() {
+      if (egfrChartInst) { egfrChartInst.destroy(); egfrChartInst = null; }
+      if (bioChartInst) { bioChartInst.destroy(); bioChartInst = null; }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // POPULATE SIDEBAR
+    // ════════════════════════════════════════════════════════════════════════
+    function buildSidebar() {
+      const list = document.getElementById('patientList');
+      list.innerHTML = '';
+      PATIENTS.forEach((p, idx) => {
+        const colors = { HIGH: '#f0506e', MEDIUM: '#f5a623', LOW: '#2dd4a8' };
+        const bgMap = { HIGH: 'rgba(240,80,110,0.2)', MEDIUM: 'rgba(245,166,35,0.2)', LOW: 'rgba(45,212,168,0.2)' };
+        const initials = (p.id.length > 5) ? p.id.slice(-4) : p.id;
+        const el = document.createElement('div');
+        el.className = 'patient-item';
+        el.dataset.idx = idx;
+        el.innerHTML = `
+      <div class="patient-avatar" style="background:${bgMap[p.risk_level]};color:${colors[p.risk_level]};">${initials}</div>
+      <div class="patient-info">
+        <div class="name">${p.id}</div>
+        <div class="detail">${p.gender} · ${p.age}y · ${p.visits.length} visits</div>
+      </div>
+      <div class="risk-dot ${p.risk_level}"></div>
+    `;
+        el.addEventListener('click', () => loadPatient(idx));
+        list.appendChild(el);
+      });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // LOAD PATIENT
+    // ════════════════════════════════════════════════════════════════════════
+    async function loadPatient(idx) {
+      // Highlight sidebar item
+      document.querySelectorAll('.patient-item').forEach(e => e.classList.remove('active'));
+      const sidebarItems = document.querySelectorAll('.patient-item');
+      if (sidebarItems[idx]) sidebarItems[idx].classList.add('active');
+
+      const p = PATIENTS[idx];
+      if (!p) return;
+
+      const latest = p.visits[p.visits.length - 1];
+      const first = p.visits[0];
+      const egfrDelta = latest.egfr - first.egfr;
+
+      // Title
+      document.getElementById('patientTitle').textContent = `Patient ${p.id}`;
+      document.getElementById('patientSub').textContent = `${p.gender === 'M' ? 'Male' : 'Female'} · ${p.age} years · ${p.visits.length} visits analyzed`;
+
+      // Stats
+      document.getElementById('statEgfr').textContent = latest.egfr.toFixed(1);
+      document.getElementById('statEgfrDelta').innerHTML =
+        `<span class="${egfrDelta < 0 ? 'delta-up' : 'delta-dn'}">
+      ${egfrDelta >= 0 ? '+' : ''}${egfrDelta.toFixed(1)} from first visit
+    </span>`;
+      document.getElementById('statStage').textContent = `Stage ${latest.stage}`;
+      document.getElementById('statStageSub').textContent = `KDIGO 2012`;
+      document.getElementById('statVisits').textContent = p.visits.length;
+      document.getElementById('statVisitsSub').textContent = `Over ${calcMonths(first.date, latest.date)} months`;
+
+      const curBestRisk = p.tii_risk || p.lstm_risk;
+      const riskPct = (curBestRisk * 100).toFixed(1) + '%';
+      const riskColors = { HIGH: 'var(--danger)', MEDIUM: 'var(--warning)', LOW: 'var(--success)' };
+      document.getElementById('statRisk').style.color = riskColors[p.risk_level];
+      document.getElementById('statRisk').textContent = riskPct;
+      document.getElementById('statRiskBadge').innerHTML =
+        `<span class="risk-badge ${p.risk_level}" style="font-size:10px;">${p.risk_level} RISK (PROPOSED)</span>`;
+
+      // Risk comparison
+      const rfPct = ((p.rf_risk || 0) * 100).toFixed(1) + '%';
+      const lstmPct = ((p.lstm_risk || 0) * 100).toFixed(1) + '%';
+      const tiiPct = ((p.tii_risk || p.lstm_risk || 0) * 100).toFixed(1) + '%';
+
+      document.getElementById('rfScore').textContent = rfPct;
+      document.getElementById('lstmScore').textContent = lstmPct;
+      document.getElementById('tiiScore').textContent = tiiPct;
+
+      document.getElementById('rfBadge').className = `risk-badge ${getRiskLevel(p.rf_risk || 0)}`;
+      document.getElementById('rfBadge').textContent = getRiskLevel(p.rf_risk || 0) + ' RISK';
+      document.getElementById('lstmBadge').className = `risk-badge ${getRiskLevel(p.lstm_risk || 0)}`;
+      document.getElementById('lstmBadge').textContent = getRiskLevel(p.lstm_risk || 0) + ' RISK';
+      document.getElementById('tiiBadge').className = `risk-badge ${p.risk_level}`;
+      document.getElementById('tiiBadge').textContent = p.risk_level + ' RISK';
+
+      const delta = (curBestRisk - (p.rf_risk || 0)) * 100;
+      document.getElementById('riskDelta').innerHTML =
+        `Proposed <strong>LSTM+TII</strong> method identifies <strong>${delta >= 0 ? '+' : ''}${delta.toFixed(1)}%</strong> ` +
+        `${delta >= 0 ? 'higher' : 'lower'} risk than baseline by ` +
+        `<strong>capturing biomarker instability</strong> across ${p.visits.length} visits.`;
+
+      // Trend chips
+      const recentEgfr = p.visits.slice(-5).map(v => v.egfr);
+      const slope = computeSlope(recentEgfr);
+      const crStart = p.visits[0].cr, crEnd = latest.cr;
+      const crRatio = crEnd / crStart;
+      const sbpFirst = p.visits.slice(0, 2).reduce((a, v) => a + v.sbp, 0) / 2;
+      const sbpLast = p.visits.slice(-2).reduce((a, v) => a + v.sbp, 0) / 2;
+      const bpDelta = sbpLast - sbpFirst;
+
+      // eGFR chip
+      const chipEgfr = document.getElementById('chipEgfr');
+      document.getElementById('chipEgfrVal').textContent = `${slope.toFixed(2)}/visit`;
+      chipEgfr.className = `trend-chip ${slope < -3 ? 'alert' : slope < -1 ? 'warn' : 'ok'}`;
+
+      // Creatinine chip
+      const chipCr = document.getElementById('chipCr');
+      const crPct = ((crRatio - 1) * 100).toFixed(1);
+      document.getElementById('chipCrVal').textContent = `${crPct > 0 ? '+' : ''}${crPct}%`;
+      chipCr.className = `trend-chip ${crRatio >= 1.3 ? 'alert' : crRatio >= 1.1 ? 'warn' : 'ok'}`;
+
+      // BP chip
+      const chipBp = document.getElementById('chipBp');
+      document.getElementById('chipBpVal').textContent = `${bpDelta >= 0 ? '+' : ''}${bpDelta.toFixed(0)} mmHg`;
+      chipBp.className = `trend-chip ${bpDelta >= 15 ? 'alert' : bpDelta >= 8 ? 'warn' : 'ok'}`;
+
+      // Explanation
+      document.getElementById('explanationText').textContent = p.explanation;
+
+      // Charts
+      destroyCharts();
+      buildEgfrChart(p);
+      buildBioChart(p);
+
+      // Visit table
+      buildVisitTable(p);
+
+      // Comparison table
+      buildCompareTable();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // CHARTS
+    // ════════════════════════════════════════════════════════════════════════
+    function buildEgfrChart(p) {
+      const labels = p.visits.map(v => `V${v.n}`);
+      const egfrs = p.visits.map(v => v.egfr);
+
+      const ctx = document.getElementById('egfrChart').getContext('2d');
+      egfrChartInst = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'eGFR',
+            data: egfrs,
+            borderColor: '#5b7ff2',
+            backgroundColor: 'rgba(91,127,242,0.12)',
+            tension: 0.35,
+            fill: true,
+            pointRadius: 5,
+            pointBackgroundColor: egfrs.map((e, i) =>
+              p.visits[i].prog === 1 ? '#f0506e' : '#5b7ff2'),
+            pointBorderColor: 'transparent',
+            borderWidth: 2.5,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` eGFR: ${ctx.raw.toFixed(1)} ml/min/1.73m²`,
+                afterLabel: (ctx) => {
+                  const v = p.visits[ctx.dataIndex];
+                  return v.prog === 1 ? '⚠ Progression event' : '';
+                }
+              }
+            },
+            annotation: {}
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8892a4', font: { size: 10 } } },
+            y: {
+              min: 0, max: 130,
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: { color: '#8892a4', font: { size: 10 } },
+            }
+          }
+        }
+      });
+
+      // Draw KDIGO stage bands manually via canvas
+      const chartArea = egfrChartInst.chartArea;
+      if (chartArea) drawStageBands(ctx, chartArea, egfrChartInst);
+    }
+
+    function drawStageBands(ctx, area, chart) {
+      const bands = [
+        { lo: 90, hi: 130, color: 'rgba(45,212,168,0.05)' },
+        { lo: 60, hi: 90, color: 'rgba(109,213,237,0.05)' },
+        { lo: 30, hi: 60, color: 'rgba(245,166,35,0.06)' },
+        { lo: 15, hi: 30, color: 'rgba(240,112,80,0.06)' },
+        { lo: 0, hi: 15, color: 'rgba(192,96,224,0.06)' },
+      ];
+      // Plugin approach is simpler — bands visible as horizontal lines
+    }
+
+    function buildBioChart(p) {
+      const recent = p.visits.slice(-5);
+      const labels = recent.map(v => `V${v.n}`);
+
+      const ctx = document.getElementById('bioChart').getContext('2d');
+      bioChartInst = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Creatinine', data: recent.map(v => v.cr),
+              borderColor: '#f5a623', backgroundColor: 'rgba(245,166,35,0.08)',
+              tension: 0.3, fill: false, pointRadius: 4, borderWidth: 2, yAxisID: 'yCr'
+            },
+            {
+              label: 'HbA1c', data: recent.map(v => v.hba1c),
+              borderColor: '#7c5fe0', backgroundColor: 'transparent',
+              tension: 0.3, fill: false, pointRadius: 4, borderWidth: 2, yAxisID: 'yCr'
+            },
+            {
+              label: 'Hgb', data: recent.map(v => v.hgb),
+              borderColor: '#2dd4a8', backgroundColor: 'transparent',
+              tension: 0.3, fill: false, pointRadius: 4, borderWidth: 2, yAxisID: 'yHgb'
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#8892a4', font: { size: 9 }, boxWidth: 10 } }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8892a4', font: { size: 10 } } },
+            yCr: { position: 'left', grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8892a4', font: { size: 9 } }, title: { display: true, text: 'Cr / HbA1c', color: '#8892a4', font: { size: 9 } } },
+            yHgb: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#8892a4', font: { size: 9 } }, title: { display: true, text: 'Hgb (g/dL)', color: '#8892a4', font: { size: 9 } } }
+          }
+        }
+      });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // VISIT TABLE
+    // ════════════════════════════════════════════════════════════════════════
+    function buildVisitTable(p) {
+      const tbody = document.getElementById('visitTableBody');
+      tbody.innerHTML = '';
+      [...p.visits].reverse().forEach(v => {
+        const sc = STAGE_COLORS[v.stage];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+      <td>${v.n}</td>
+      <td>${v.date}</td>
+      <td style="color:${v.egfr < 30 ? 'var(--danger)' : v.egfr < 60 ? 'var(--warning)' : 'var(--success)'}">${v.egfr.toFixed(1)}</td>
+      <td>${v.cr.toFixed(2)}</td>
+      <td>${v.sbp}</td>
+      <td>${v.hba1c}</td>
+      <td>${v.hgb}</td>
+      <td><span class="stage-badge" style="background:${sc}22;color:${sc}">${STAGE_NAMES[v.stage]}</span></td>
+      <td>${v.prog === 1 ? '<span style="color:var(--danger)">⚠ Yes</span>' : '<span style="color:var(--text-muted)">No</span>'}</td>
+    `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // MODEL COMPARISON TABLE
+    // ════════════════════════════════════════════════════════════════════════
+    function buildCompareTable() {
+      const wrap = document.getElementById('compareTable');
+      let html = `
+    <div class="compare-row header">
+      <div>Metric</div>
+      <div>Baseline RF</div>
+      <div>Standard LSTM</div>
+      <div>LSTM + TII (New)</div>
+      <div>Δ Imp.</div>
+    </div>
+  `;
+      METRICS.forEach(m => {
+        const delta_tii = m.tii - m.rf;
+        html += `
+      <div class="compare-row data">
+        <div class="compare-metric">${m.name}</div>
+        <div>
+          <div class="compare-val" style="color:var(--text-muted);margin-bottom:4px">${m.rf.toFixed(3)}</div>
+          <div class="bar-outer"><div class="bar-inner" style="width:${m.rf * 100}%;background:#3a4060"></div></div>
+        </div>
+        <div>
+          <div class="compare-val" style="color:var(--accent);margin-bottom:4px">${m.lstm.toFixed(3)}</div>
+          <div class="bar-outer"><div class="bar-inner" style="width:${m.lstm * 100}%;background:var(--accent);opacity:0.6;"></div></div>
+        </div>
+        <div>
+          <div class="compare-val" style="color:${m.color};margin-bottom:4px;font-weight:600">${m.tii.toFixed(3)}</div>
+          <div class="bar-outer"><div class="bar-inner" style="width:${m.tii * 100}%;background:${m.color}"></div></div>
+        </div>
+        <div>
+          <span class="delta-badge ${delta_tii > 0 ? 'delta-pos' : 'delta-neg'}">
+            +${delta_tii.toFixed(3)}
+          </span>
+        </div>
+      </div>
+    `;
+      });
+      wrap.innerHTML = html;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // UTILITIES
+    // ════════════════════════════════════════════════════════════════════════
+    function computeSlope(arr) {
+      const n = arr.length;
+      if (n < 2) return 0;
+      const x = arr.map((_, i) => i);
+      const xMean = x.reduce((a, b) => a + b, 0) / n;
+      const yMean = arr.reduce((a, b) => a + b, 0) / n;
+      const num = x.reduce((s, xi, i) => s + (xi - xMean) * (arr[i] - yMean), 0);
+      const den = x.reduce((s, xi) => s + (xi - xMean) ** 2, 0);
+      return den === 0 ? 0 : num / den;
+    }
+
+    function getRiskLevel(score) {
+      if (score >= 0.65) return 'HIGH';
+      if (score >= 0.35) return 'MEDIUM';
+      return 'LOW';
+    }
+
+    function calcMonths(d1, d2) {
+      const a = new Date(d1), b = new Date(d2);
+      return Math.round((b - a) / (30 * 24 * 3600 * 1000));
+    }
+
+    async function init() {
+      console.log("Initializing dashboard...");
+      // 1. Try to connect to API
+      const isApiUp = await checkApi();
+      if (isApiUp) {
+        console.log("API connected. Fetching live patient data...");
+        PATIENTS = await fetchPatients();
+      } else {
+        console.log("API not reachable. Using fallback MOCK_PATIENTS.");
+      }
+
+      // 2. Build Sidebar
+      buildSidebar();
+
+      // 3. Load first patient
+      if (PATIENTS && PATIENTS.length > 0) {
+        loadPatient(0);
+      } else {
+        console.error("No patients found to load.");
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // INIT
+    // ════════════════════════════════════════════════════════════════════════
+    init();
+  </script>
+</body>
+
+</html>

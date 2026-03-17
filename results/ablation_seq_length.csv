@@ -1,0 +1,4 @@
+sequence_length,auc_roc,notes
+3,0.78,Too short — misses trends
+5,0.87,Selected ★
+8,0.84,Too long — excessive padding
