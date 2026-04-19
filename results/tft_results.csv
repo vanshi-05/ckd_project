@@ -1,0 +1,2 @@
+model,accuracy,precision,recall,f1,auc_roc,avg_prec
+TFT (Transformer Encoder),0.9584,0.9618,0.966,0.9639,0.9947,0.9962

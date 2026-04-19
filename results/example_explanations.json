@@ -1,18 +1,18 @@
 [
   {
     "patient_id": "P10000032",
-    "risk_score": 0.373,
-    "baseline_score": 0.2404,
-    "lstm_score": 0.3207,
-    "tii_score": 0.373,
-    "risk_level": "MEDIUM",
-    "recommended_action": "Close monitoring; repeat labs in 4\u20136 weeks",
+    "risk_score": 0.3437,
+    "baseline_score": 0.2314,
+    "lstm_score": 0.3362,
+    "tii_score": 0.3437,
+    "risk_level": "LOW",
+    "recommended_action": "Continue routine monitoring per CKD care plan",
     "primary_driver": "Acute eGFR Drop",
     "trend_flags": [
       "egfr_acute_drop",
       "creatinine_rising"
     ],
-    "explanation": "\u26a0\ufe0f Acute eGFR drop of 19.6 ml/min detected. Current eGFR: 107.9. Creatinine rose 100.0% (0.30\u21920.60 mg/dL). LSTM+TII risk: 37.3%, baseline: 24.0%.",
+    "explanation": "Acute eGFR drop of 19.6 ml/min detected. Current eGFR: 107.9. Creatinine rose 100.0% (0.30\u21920.60 mg/dL). BiLSTM+TII risk: 34.4%, baseline: 23.1%.",
     "egfr_trend": {
       "slope": -5.89,
       "r_squared": 0.6,
@@ -34,18 +34,18 @@
   },
   {
     "patient_id": "P10000690",
-    "risk_score": 0.4207,
-    "baseline_score": 0.3028,
-    "lstm_score": 0.4098,
-    "tii_score": 0.4207,
-    "risk_level": "MEDIUM",
-    "recommended_action": "Close monitoring; repeat labs in 4\u20136 weeks",
+    "risk_score": 0.8337,
+    "baseline_score": 0.7536,
+    "lstm_score": 0.77,
+    "tii_score": 0.8337,
+    "risk_level": "HIGH",
+    "recommended_action": "Urgent nephrology review within 2\u20134 weeks",
     "primary_driver": "Acute eGFR Drop",
     "trend_flags": [
       "egfr_acute_drop",
       "creatinine_rising"
     ],
-    "explanation": "\u26a0\ufe0f Acute eGFR drop of 11.3 ml/min detected. Current eGFR: 43.5. Creatinine rose 33.3% (0.90\u21921.20 mg/dL). LSTM+TII risk: 42.1%, baseline: 30.3%.",
+    "explanation": "Acute eGFR drop of 11.3 ml/min detected. Current eGFR: 43.5. Creatinine rose 33.3% (0.90\u21921.20 mg/dL). BiLSTM+TII risk: 83.4%, baseline: 75.4%.",
     "egfr_trend": {
       "slope": -6.36,
       "r_squared": 0.861,
@@ -67,15 +67,15 @@
   },
   {
     "patient_id": "P10000935",
-    "risk_score": 0.4403,
-    "baseline_score": 0.2371,
-    "lstm_score": 0.3626,
-    "tii_score": 0.4403,
+    "risk_score": 0.4725,
+    "baseline_score": 0.3915,
+    "lstm_score": 0.423,
+    "tii_score": 0.4725,
     "risk_level": "MEDIUM",
     "recommended_action": "Close monitoring; repeat labs in 4\u20136 weeks",
     "primary_driver": "No significant trend",
     "trend_flags": [],
-    "explanation": "eGFR stable over 5 visits. Current: 104.6. LSTM+TII risk: 44.0%, baseline: 23.7%.",
+    "explanation": "eGFR stable over 5 visits. Current: 104.6. BiLSTM+TII risk: 47.3%, baseline: 39.1%.",
     "egfr_trend": {
       "slope": 3.04,
       "r_squared": 0.247,
@@ -97,18 +97,18 @@
   },
   {
     "patient_id": "P10000980",
-    "risk_score": 0.2499,
-    "baseline_score": 0.1295,
-    "lstm_score": 0.2318,
-    "tii_score": 0.2499,
-    "risk_level": "LOW",
-    "recommended_action": "Continue routine monitoring per CKD care plan",
+    "risk_score": 0.3636,
+    "baseline_score": 0.2354,
+    "lstm_score": 0.3029,
+    "tii_score": 0.3636,
+    "risk_level": "MEDIUM",
+    "recommended_action": "Close monitoring; repeat labs in 4\u20136 weeks",
     "primary_driver": "Acute eGFR Drop",
     "trend_flags": [
       "egfr_acute_drop",
       "creatinine_rising"
     ],
-    "explanation": "\u26a0\ufe0f Acute eGFR drop of 11.9 ml/min detected. Current eGFR: 18.4. Creatinine rose 60.4% (1.60\u21922.57 mg/dL). LSTM+TII risk: 25.0%, baseline: 13.0%.",
+    "explanation": "Acute eGFR drop of 11.9 ml/min detected. Current eGFR: 18.4. Creatinine rose 60.4% (1.60\u21922.57 mg/dL). BiLSTM+TII risk: 36.4%, baseline: 23.5%.",
     "egfr_trend": {
       "slope": -2.33,
       "r_squared": 0.525,
@@ -130,17 +130,17 @@
   },
   {
     "patient_id": "P10001338",
-    "risk_score": 0.2097,
-    "baseline_score": 0.0,
-    "lstm_score": 0.1952,
-    "tii_score": 0.2097,
+    "risk_score": 0.1491,
+    "baseline_score": 0.0636,
+    "lstm_score": 0.1349,
+    "tii_score": 0.1491,
     "risk_level": "LOW",
     "recommended_action": "Continue routine monitoring per CKD care plan",
     "primary_driver": "Acute eGFR Drop",
     "trend_flags": [
       "egfr_acute_drop"
     ],
-    "explanation": "\u26a0\ufe0f Acute eGFR drop of 14.9 ml/min detected. Current eGFR: 91.4. LSTM+TII risk: 21.0%, baseline: 0.0%.",
+    "explanation": "Acute eGFR drop of 14.9 ml/min detected. Current eGFR: 91.4. BiLSTM+TII risk: 14.9%, baseline: 6.4%.",
     "egfr_trend": {
       "slope": 21.77,
       "r_squared": 0.968,

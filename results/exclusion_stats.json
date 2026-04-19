@@ -1,0 +1,8 @@
+{
+  "total_patients_before_filter": 186510,
+  "min_visits_threshold": 3,
+  "patients_excluded": 146608,
+  "pct_excluded": 78.61,
+  "patients_retained": 39902,
+  "pct_retained": 21.39
+}
